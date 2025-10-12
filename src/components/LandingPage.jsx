@@ -1,108 +1,108 @@
 import React from "react";
 import heroFarm from "../assets/hero-farm.jpg";
-import farmerHands from "../assets/farmer-hands.jpg";
 import freshProduce from "../assets/fresh-produce.jpg";
+import farmerHands from "../assets/farmer-hands.jpg";
 
 const LandingPage = ({ setView }) => {
   return (
-    <div className="flex flex-col min-h-screen bg-green-50">
-      {/* 🌾 Header */}
-      <header className="flex justify-between items-center px-8 py-5 bg-white shadow-sm">
-        <h1 className="text-2xl font-extrabold text-green-700">AgriLink</h1>
-        <nav className="space-x-4">
-          <button
-            onClick={() => setView("login")}
-            className="px-5 py-2 rounded-lg text-white bg-green-600 hover:bg-green-700 font-semibold transition"
-          >
-            Login
-          </button>
+    <div className="w-full font-sans text-gray-800">
+
+      {/* --- Hero Section --- */}
+      <section
+        className="relative h-screen flex items-center justify-center text-center bg-fixed bg-cover bg-center"
+        style={{ backgroundImage: `url(${heroFarm})` }}
+      >
+        <div className="absolute inset-0 bg-black opacity-50"></div>
+        <div className="relative z-10 px-4 max-w-4xl">
+          <h1 className="text-5xl md:text-7xl font-bold text-white leading-tight drop-shadow-lg">
+            Empowering Farmers,<br />Connecting Markets
+          </h1>
+          <p className="mt-4 text-xl md:text-2xl text-gray-100 drop-shadow-md">
+            Sell your produce directly to buyers and access real-time market insights.
+          </p>
           <button
             onClick={() => setView("signup")}
-            className="px-5 py-2 rounded-lg border-2 border-green-600 text-green-700 hover:bg-green-600 hover:text-white font-semibold transition"
+            className="mt-8 px-8 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow-lg transform transition duration-300 hover:scale-105"
           >
-            Sign Up
+            Get Started
           </button>
-        </nav>
-      </header>
+        </div>
+      </section>
 
-      {/* 🌱 Hero Section */}
-      <section className="flex flex-col md:flex-row items-center justify-between px-8 md:px-16 py-12">
-        <div className="max-w-xl space-y-5">
-          <h2 className="text-4xl md:text-5xl font-bold text-green-800 leading-tight">
-            Connecting Farmers & Aggregators — <br /> Empowering Agriculture 🌾
+      {/* --- How It Works Section --- */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-4xl md:text-5xl font-extrabold text-green-800 mb-12">
+            How It Works
           </h2>
-          <p className="text-gray-600 text-lg">
-            AgriLink helps farmers get better prices and aggregators source fresh produce efficiently. 
-            Join our growing network and make agriculture smarter and sustainable.
-          </p>
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setView("signup")}
-              className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition"
-            >
-              Get Started
-            </button>
-            <button
-              onClick={() => setView("login")}
-              className="px-6 py-3 border border-green-600 text-green-700 font-semibold rounded-lg hover:bg-green-600 hover:text-white transition"
-            >
-              Login
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              { icon: "🌱", title: "For Farmers", desc: "List your produce, set prices, and connect with buyers in your area." },
+              { icon: "👥", title: "For Aggregators", desc: "Browse available produce, negotiate deals, and streamline your supply chain." },
+              { icon: "📈", title: "Smart Pricing", desc: "Access price predictions and market insights to make informed decisions." },
+            ].map((step, i) => (
+              <div
+                key={i}
+                className="p-8 bg-white rounded-xl shadow-lg border border-gray-200 transition transform hover:scale-105 hover:shadow-2xl"
+              >
+                <div className="text-5xl mb-4">{step.icon}</div>
+                <h3 className="text-2xl font-bold text-green-800 mb-2">{step.title}</h3>
+                <p className="text-gray-600">{step.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
+      </section>
 
-        <div className="mt-10 md:mt-0 flex-shrink-0">
-          <img
-            src={heroFarm}
-            alt="Farm Hero"
-            className="w-full max-w-lg rounded-2xl shadow-lg"
-          />
+      {/* --- Features Section --- */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 space-y-20">
+
+          {/* Feature 1 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div
+              className="h-96 w-full rounded-xl shadow-2xl bg-gray-200 bg-cover bg-center"
+              style={{ backgroundImage: `url(${freshProduce})` }}
+            ></div>
+            <div className="space-y-4 p-4 lg:p-0">
+              <h3 className="text-4xl font-bold text-green-800">Fresh, Quality Produce</h3>
+              <p className="text-xl text-gray-600 leading-relaxed">
+                Farmers can showcase their best produce, and buyers can source exactly what they need.
+              </p>
+            </div>
+          </div>
+
+          {/* Feature 2 */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-4 p-4 lg:p-0 lg:order-2">
+              <h3 className="text-4xl font-bold text-green-800">Empowering Farmers</h3>
+              <p className="text-xl text-gray-600 leading-relaxed">
+                Fair prices, transparent transactions, and lasting relationships between farmers and buyers.
+              </p>
+            </div>
+            <div
+              className="h-96 w-full rounded-xl shadow-2xl bg-gray-200 bg-cover bg-center lg:order-1"
+              style={{ backgroundImage: `url(${farmerHands})` }}
+            ></div>
+          </div>
         </div>
       </section>
 
-      {/* 🥦 Features Section */}
-      <section className="grid md:grid-cols-3 gap-6 px-8 md:px-16 py-12 bg-white">
-        <div className="bg-green-50 p-6 rounded-xl shadow hover:shadow-md transition">
-          <img
-            src={farmerHands}
-            alt="Farmer Hands"
-            className="rounded-lg mb-4 w-full h-48 object-cover"
-          />
-          <h3 className="text-lg font-bold text-green-800 mb-2">For Farmers</h3>
-          <p className="text-gray-600">
-            Sell your crops directly and predict prices easily using our smart AI tools.
+      {/* --- CTA Section --- */}
+      <section className="py-20 bg-green-600 text-center text-white">
+        <div className="max-w-7xl mx-auto px-4 space-y-6">
+          <h2 className="text-5xl font-extrabold">Ready to Get Started?</h2>
+          <p className="text-xl text-green-100">
+            Join our community of farmers and aggregators today!
           </p>
-        </div>
-
-        <div className="bg-green-50 p-6 rounded-xl shadow hover:shadow-md transition">
-          <img
-            src={freshProduce}
-            alt="Fresh Produce"
-            className="rounded-lg mb-4 w-full h-48 object-cover"
-          />
-          <h3 className="text-lg font-bold text-green-800 mb-2">For Aggregators</h3>
-          <p className="text-gray-600">
-            Buy directly from trusted farmers and track your purchases efficiently.
-          </p>
-        </div>
-
-        <div className="bg-green-50 p-6 rounded-xl shadow hover:shadow-md transition">
-          <img
-            src={heroFarm}
-            alt="Admin Dashboard"
-            className="rounded-lg mb-4 w-full h-48 object-cover"
-          />
-          <h3 className="text-lg font-bold text-green-800 mb-2">For Admins</h3>
-          <p className="text-gray-600">
-            Manage users, monitor transactions, and ensure platform reliability with ease.
-          </p>
+          <button
+            onClick={() => setView("signup")}
+            className="mt-6 px-10 py-4 bg-white text-green-600 font-semibold rounded-lg shadow-lg hover:bg-gray-100 transform transition duration-300 hover:scale-105"
+          >
+            Create Your Account
+          </button>
         </div>
       </section>
-
-      {/* 🌿 Footer */}
-      <footer className="text-center text-gray-500 text-sm py-6 bg-green-100 mt-auto">
-        © {new Date().getFullYear()} AgriLink. Empowering agriculture for a better tomorrow.
-      </footer>
     </div>
   );
 };

@@ -1,38 +1,32 @@
 import React, { useState } from "react";
-import toast, { Toaster } from "react-hot-toast";
-
 import LandingPage from "./components/LandingPage";
 import LoginForm from "./components/auth/LoginForm";
 import SignUpForm from "./components/auth/SignUpForm";
+//import Footer from "./components/Footer";
 
-// ✅ Import Firebase setup
-import { auth, db } from "./config/firebaseConfig";
+const App = ({ auth, db, showNotification }) => {
+  const [view, setView] = useState("landing");
 
-const App = () => {
-  const [view, setView] = useState("home");
-
-  const showNotification = (message, type = "success") => {
-    if (type === "error") toast.error(message);
-    else toast.success(message);
-  };
-
-  const renderPage = () => {
+  const renderView = () => {
     switch (view) {
+      case "landing":
+        return <LandingPage setView={setView} />;
       case "login":
-        return <LoginForm auth={auth} db={db} setView={setView} showNotification={showNotification} />;
-      case "signup":
-        return <SignUpForm auth={auth} db={db} setView={setView} showNotification={showNotification} />;
-      case "dashboard":
         return (
-          <div className="flex flex-col items-center justify-center min-h-screen bg-green-50">
-            <h1 className="text-3xl font-bold text-green-700 mb-4">Welcome to AgriLink Dashboard 🌾</h1>
-            <button
-              onClick={() => setView("home")}
-              className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition"
-            >
-              Go Back to Home
-            </button>
-          </div>
+          <LoginForm
+            auth={auth}
+            setView={setView}
+            showNotification={showNotification}
+          />
+        );
+      case "signup":
+        return (
+          <SignUpForm
+            auth={auth}
+            db={db}
+            setView={setView}
+            showNotification={showNotification}
+          />
         );
       default:
         return <LandingPage setView={setView} />;
@@ -40,9 +34,8 @@ const App = () => {
   };
 
   return (
-    <div>
-      <Toaster position="top-right" />
-      {renderPage()}
+    <div className="font-sans antialiased min-h-screen flex flex-col">
+      <div className="flex-grow">{renderView()}</div>
     </div>
   );
 };
