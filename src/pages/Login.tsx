@@ -48,7 +48,7 @@ const Login = () => {
             <Sprout className="w-12 h-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Login to your AgriFlow account</CardDescription>
+          <CardDescription>Login to your AgriLink account</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

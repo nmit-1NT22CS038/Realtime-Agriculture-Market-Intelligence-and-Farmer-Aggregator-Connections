@@ -20,7 +20,7 @@ const Home = () => {
         
         <div className="relative z-10 flex flex-col items-center justify-center h-full text-center px-4">
           <h1 className="text-5xl md:text-7xl font-bold text-primary-foreground mb-6">
-            AgriFlow Digital
+            AgriLink Pro
           </h1>
           <p className="text-xl md:text-2xl text-primary-foreground/90 mb-8 max-w-2xl">
             Connecting Farmers and Aggregators for a Better Tomorrow
@@ -50,7 +50,7 @@ const Home = () => {
       <div className="py-20 px-4 bg-muted">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-4xl font-bold text-center mb-12 text-foreground">
-            Why Choose AgriFlow?
+            Why Choose AgriLink?
           </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <FeatureCard

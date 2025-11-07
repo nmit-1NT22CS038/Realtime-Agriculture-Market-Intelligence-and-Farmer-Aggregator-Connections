@@ -54,7 +54,7 @@ const SignUp = () => {
             <Sprout className="w-12 h-12 text-primary" />
           </div>
           <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Join AgriFlow Digital today</CardDescription>
+          <CardDescription>Join AgriLink Pro today</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
