@@ -73,12 +73,20 @@ const AdminDashboard = () => {
       return;
     }
 
-    await api.sendAnnouncement(token, { recipient, message });
-    toast({
-      title: "Message sent!",
-      description: `Announcement sent to ${recipient}`,
-    });
-    setMessage("");
+    try {
+      await api.sendAnnouncement(token, { recipient, message });
+      toast({
+        title: "Message sent!",
+        description: `Announcement sent to ${recipient}`,
+      });
+      setMessage("");
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to send message",
+        description: "Please try again.",
+      });
+    }
   };
 
   return (
