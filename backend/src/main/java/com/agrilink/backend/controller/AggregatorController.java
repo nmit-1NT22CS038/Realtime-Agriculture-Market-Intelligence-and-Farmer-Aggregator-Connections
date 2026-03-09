@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 import java.util.Random;
 
 @RestController
@@ -56,7 +57,7 @@ public class AggregatorController {
     @PostMapping("/offers/{listingId}/accept")
     public AcceptOfferResponse acceptOffer(@RequestHeader("Authorization") String auth, @PathVariable Long listingId) {
         User user = requireAggregator(auth);
-        ProductListing listing = productListingRepository.findById(listingId)
+        ProductListing listing = productListingRepository.findById(Objects.requireNonNull(listingId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
 
         if (listing.getStatus() != ListingStatus.OPEN) {
@@ -92,7 +93,7 @@ public class AggregatorController {
             @Valid @RequestBody VerifyOtpRequest request
     ) {
         User user = requireAggregator(auth);
-        Offer offer = offerRepository.findById(offerId)
+        Offer offer = offerRepository.findById(Objects.requireNonNull(offerId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Offer not found"));
 
         if (!offer.getAggregator().getId().equals(user.getId())) {
