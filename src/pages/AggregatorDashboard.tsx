@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -6,59 +6,49 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, MapPin, CheckCircle, Navigation } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Offer {
-  id: string;
-  farmerName: string;
-  productName: string;
-  quantity: number;
-  price: number;
-  location: string;
-  status: 'pending' | 'accepted' | 'completed';
-}
+import { api, type Offer } from "@/lib/api";
 
 const AggregatorDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  const [offers] = useState<Offer[]>([
-    {
-      id: '1',
-      farmerName: 'Ramesh Kumar',
-      productName: 'Wheat',
-      quantity: 100,
-      price: 25,
-      location: 'Village Panchayat, Dist. Nagpur',
-      status: 'pending'
-    },
-    {
-      id: '2',
-      farmerName: 'Suresh Patel',
-      productName: 'Rice',
-      quantity: 150,
-      price: 30,
-      location: 'Farm Road, Dist. Pune',
-      status: 'pending'
-    }
-  ]);
+  const [offers, setOffers] = useState<Offer[]>([]);
 
   const [acceptedOffers, setAcceptedOffers] = useState<Offer[]>([]);
   const [otp, setOtp] = useState("");
-  const [selectedOffer, setSelectedOffer] = useState<string | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    Promise.all([api.getAvailableOffers(token), api.getMyOffers(token)])
+      .then(([available, mine]) => {
+        setOffers(available);
+        setAcceptedOffers(mine);
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Failed to load offers",
+          description: "Check backend server and login again.",
+        });
+      });
+  }, [token, toast]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const handleAcceptOffer = (offer: Offer) => {
-    const acceptedOffer = { ...offer, status: 'accepted' as const };
-    setAcceptedOffers([...acceptedOffers, acceptedOffer]);
+  const handleAcceptOffer = async (offer: Offer) => {
+    if (!token) return;
+    const response = await api.acceptOffer(token, offer.listingId);
+    setOffers((prev) => prev.filter((o) => o.id !== offer.id));
+    setAcceptedOffers((prev) => [response.offer, ...prev]);
     
     toast({
       title: "Offer accepted!",
-      description: `You've accepted ${offer.productName} from ${offer.farmerName}`,
+      description: `You've accepted ${offer.productName}. OTP for local testing: ${response.otpForTesting}`,
     });
   };
 
@@ -71,20 +61,18 @@ const AggregatorDashboard = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(location)}`, '_blank');
   };
 
-  const handleVerifyOTP = (offerId: string) => {
-    if (otp === "123456") {
-      setAcceptedOffers(prev => 
-        prev.map(o => o.id === offerId ? { ...o, status: 'completed' as const } : o)
-      );
-      
+  const handleVerifyOTP = async (offerId: number) => {
+    if (!token) return;
+    try {
+      const updated = await api.verifyOtp(token, offerId, otp);
+      setAcceptedOffers((prev) => prev.map((o) => (o.id === offerId ? updated : o)));
       toast({
         title: "Order completed!",
         description: "OTP verified successfully. Item received.",
       });
-      
       setOtp("");
       setSelectedOffer(null);
-    } else {
+    } catch {
       toast({
         variant: "destructive",
         title: "Invalid OTP",

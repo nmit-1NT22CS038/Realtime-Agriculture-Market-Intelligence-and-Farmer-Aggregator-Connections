@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,17 +8,10 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, TrendingUp, MapPin, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LocationPicker from "@/components/LocationPicker";
-
-interface Product {
-  id: string;
-  name: string;
-  quantity: number;
-  price: number;
-  location: string;
-}
+import { api, type Product } from "@/lib/api";
 
 const FarmerDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -28,39 +21,86 @@ const FarmerDashboard = () => {
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
 
+  useEffect(() => {
+    if (!token) return;
+    api.getFarmerProducts(token)
+      .then(setProducts)
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Failed to load products",
+          description: "Check backend server and login again.",
+        });
+      });
+  }, [token, toast]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const handleAddProduct = (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newProduct: Product = {
-      id: Date.now().toString(),
-      name: productName,
-      quantity: parseFloat(quantity),
-      price: parseFloat(price),
-      location
-    };
 
-    setProducts([...products, newProduct]);
-    
-    toast({
-      title: "Product added!",
-      description: `${productName} has been listed for sale`,
-    });
+    if (!token) return;
 
-    setProductName("");
-    setQuantity("");
-    setPrice("");
+    try {
+      const created = await api.addFarmerProduct(token, {
+        productName,
+        quantity: parseFloat(quantity),
+        price: parseFloat(price),
+        location,
+      });
+
+      setProducts((prev) => [created, ...prev]);
+      
+      toast({
+        title: "Product added!",
+        description: `${productName} has been listed for sale`,
+      });
+
+      setProductName("");
+      setQuantity("");
+      setPrice("");
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to add product",
+        description: "Please try again.",
+      });
+    }
   };
 
-  const handlePricePredict = () => {
-    toast({
-      title: "Price Prediction",
-      description: "This feature would connect to a price prediction API in production",
-    });
+  const handlePricePredict = async () => {
+    if (!token) return;
+
+    if (!productName || !quantity || !location) {
+      toast({
+        variant: "destructive",
+        title: "Missing fields",
+        description: "Fill Product Name, Quantity, and Location first.",
+      });
+      return;
+    }
+
+    try {
+      const result = await api.predictPrice(token, {
+        cropName: productName,
+        district: location,
+        quantityKg: parseFloat(quantity),
+      });
+
+      toast({
+        title: "Price Prediction",
+        description: `Predicted ₹${result.predictedPricePerKg.toFixed(2)}/kg (confidence ${result.confidence.toFixed(1)}%, ${result.modelSource})`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Prediction failed",
+        description: "Check backend and ML script configuration.",
+      });
+    }
   };
 
   return (

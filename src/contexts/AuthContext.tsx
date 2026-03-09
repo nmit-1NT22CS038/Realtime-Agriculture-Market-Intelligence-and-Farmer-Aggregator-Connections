@@ -1,13 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-type UserRole = 'farmer' | 'aggregator' | 'admin';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-}
+import { api, type User, type UserRole } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -15,64 +7,61 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string, role: UserRole) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  token: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    // Check for existing user in localStorage
     const storedUser = localStorage.getItem('agriflow_user');
+    const storedToken = localStorage.getItem('agriflow_token');
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+    if (storedToken) {
+      setToken(storedToken);
     }
   }, []);
 
   const signup = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
-    // Mock signup - store in localStorage
-    const users = JSON.parse(localStorage.getItem('agriflow_users') || '[]');
-    
-    if (users.find((u: any) => u.email === email)) {
-      return false; // User already exists
+    try {
+      const response = await api.signup({ name, email, password, role });
+      localStorage.setItem('agriflow_user', JSON.stringify(response.user));
+      localStorage.setItem('agriflow_token', response.token);
+      setUser(response.user);
+      setToken(response.token);
+      return true;
+    } catch {
+      return false;
     }
-
-    const newUser: User = {
-      id: Date.now().toString(),
-      name,
-      email,
-      role
-    };
-
-    users.push({ ...newUser, password });
-    localStorage.setItem('agriflow_users', JSON.stringify(users));
-    localStorage.setItem('agriflow_user', JSON.stringify(newUser));
-    setUser(newUser);
-    return true;
   };
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Mock login - check localStorage
-    const users = JSON.parse(localStorage.getItem('agriflow_users') || '[]');
-    const foundUser = users.find((u: any) => u.email === email && u.password === password);
-
-    if (foundUser) {
-      const { password: _, ...userWithoutPassword } = foundUser;
-      localStorage.setItem('agriflow_user', JSON.stringify(userWithoutPassword));
-      setUser(userWithoutPassword);
+    try {
+      const response = await api.login({ email, password });
+      localStorage.setItem('agriflow_user', JSON.stringify(response.user));
+      localStorage.setItem('agriflow_token', response.token);
+      setUser(response.user);
+      setToken(response.token);
       return true;
+    } catch {
+      return false;
     }
-    return false;
   };
 
   const logout = () => {
     localStorage.removeItem('agriflow_user');
+    localStorage.removeItem('agriflow_token');
     setUser(null);
+    setToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, isAuthenticated: !!user, token }}>
       {children}
     </AuthContext.Provider>
   );

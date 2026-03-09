@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,38 +8,72 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { LogOut, MessageSquare, TrendingUp, Users, DollarSign } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { api, type AdminStats } from "@/lib/api";
+
+const fallbackMonthlySales = [
+  { month: 'Jan', sales: 150000 },
+  { month: 'Feb', sales: 180000 },
+  { month: 'Mar', sales: 220000 },
+];
+
+const fallbackProductSales = [
+  { product: 'Wheat', sales: 450000 },
+  { product: 'Rice', sales: 380000 },
+  { product: 'Vegetables', sales: 420000 },
+];
 
 const AdminDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
   const [message, setMessage] = useState("");
   const [recipient, setRecipient] = useState<'farmers' | 'aggregators' | 'all'>('all');
 
-  // Mock data for analytics
-  const stats = {
+  const [stats, setStats] = useState<AdminStats>({
     totalSales: 1250000,
     farmers: 45,
     aggregators: 12,
-    salesByMonth: [
-      { month: 'Jan', sales: 150000 },
-      { month: 'Feb', sales: 180000 },
-      { month: 'Mar', sales: 220000 },
-    ],
-    salesByProduct: [
-      { product: 'Wheat', sales: 450000 },
-      { product: 'Rice', sales: 380000 },
-      { product: 'Vegetables', sales: 420000 },
-    ]
-  };
+    salesByMonth: fallbackMonthlySales,
+    salesByProduct: fallbackProductSales
+  });
+
+  useEffect(() => {
+    if (!token) return;
+    api.getAdminStats(token)
+      .then((data) => {
+        setStats({
+          ...data,
+          salesByMonth: data.salesByMonth.length ? data.salesByMonth : fallbackMonthlySales,
+          salesByProduct: data.salesByProduct.length ? data.salesByProduct : fallbackProductSales,
+        });
+      })
+      .catch(() => {
+        toast({
+          variant: "destructive",
+          title: "Failed to load stats",
+          description: "Check backend server and login again.",
+        });
+      });
+  }, [token, toast]);
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
+    if (!token) return;
+    if (!message.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Message required",
+        description: "Please type the announcement first.",
+      });
+      return;
+    }
+
+    await api.sendAnnouncement(token, { recipient, message });
     toast({
       title: "Message sent!",
       description: `Announcement sent to ${recipient}`,
