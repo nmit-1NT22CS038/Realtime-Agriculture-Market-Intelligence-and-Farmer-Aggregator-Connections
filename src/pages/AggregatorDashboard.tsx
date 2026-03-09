@@ -42,14 +42,22 @@ const AggregatorDashboard = () => {
 
   const handleAcceptOffer = async (offer: Offer) => {
     if (!token) return;
-    const response = await api.acceptOffer(token, offer.listingId);
-    setOffers((prev) => prev.filter((o) => o.id !== offer.id));
-    setAcceptedOffers((prev) => [response.offer, ...prev]);
-    
-    toast({
-      title: "Offer accepted!",
-      description: `You've accepted ${offer.productName}. OTP for local testing: ${response.otpForTesting}`,
-    });
+    try {
+      const response = await api.acceptOffer(token, offer.listingId);
+      setOffers((prev) => prev.filter((o) => o.id !== offer.id));
+      setAcceptedOffers((prev) => [response.offer, ...prev]);
+      
+      toast({
+        title: "Offer accepted!",
+        description: `You've accepted ${offer.productName}. OTP for local testing: ${response.otpForTesting}`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to accept offer",
+        description: "Offer may already be accepted.",
+      });
+    }
   };
 
   const handleNavigate = (location: string) => {
