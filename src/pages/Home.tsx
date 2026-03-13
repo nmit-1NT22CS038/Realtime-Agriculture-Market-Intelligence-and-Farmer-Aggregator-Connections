@@ -1,6 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Sprout, TrendingUp, Users, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
+
 
 const Home = () => {
   const navigate = useNavigate();
@@ -26,22 +28,19 @@ const Home = () => {
             Connecting Farmers and Aggregators for a Better Tomorrow
           </p>
           <div className="flex gap-4">
-            <Button 
-              size="lg" 
-              variant="secondary"
-              onClick={() => navigate('/signup')}
-              className="text-lg px-8"
-            >
-              Sign Up
-            </Button>
-            <Button 
-              size="lg" 
-              variant="outline"
-              onClick={() => navigate('/login')}
-              className="text-lg px-8 bg-primary-foreground/10 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
-            >
-              Login
-            </Button>
+            // Sign Up button
+<Button asChild size="lg" variant="secondary" className="text-lg px-8">
+  <Link to="/signup">Sign Up</Link>
+</Button>
+            // Login button
+<Button
+  asChild
+  size="lg"
+  variant="outline"
+  className="text-lg px-8 bg-primary-foreground/10 border-primary-foreground text-primary-foreground hover:bg-primary-foreground hover:text-primary"
+>
+  <Link to="/login">Login</Link>
+</Button>
           </div>
         </div>
       </div>
