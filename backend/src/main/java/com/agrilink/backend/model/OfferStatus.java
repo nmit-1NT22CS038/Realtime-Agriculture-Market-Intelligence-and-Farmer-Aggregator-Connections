@@ -1,6 +1,8 @@
 package com.agrilink.backend.model;
 
 public enum OfferStatus {
-    ACCEPTED,
-    COMPLETED
+    BID_PLACED,
+    SELECTED,
+    COMPLETED, BID_ACCEPTED,
+    REJECTED
 }

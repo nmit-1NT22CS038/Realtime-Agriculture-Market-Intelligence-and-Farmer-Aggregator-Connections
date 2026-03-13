@@ -1,6 +1,7 @@
 package com.agrilink.backend.controller;
 
-import com.agrilink.backend.dto.AcceptOfferResponse;
+// import com.agrilink.backend.dto.AcceptOfferResponse;
+import com.agrilink.backend.dto.BidRequest;
 import com.agrilink.backend.dto.OfferDto;
 import com.agrilink.backend.dto.VerifyOtpRequest;
 import com.agrilink.backend.model.*;
@@ -16,7 +17,6 @@ import org.springframework.web.server.ResponseStatusException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
-import java.util.Random;
 
 @RestController
 @RequestMapping("/api/aggregator")
@@ -45,36 +45,42 @@ public class AggregatorController {
                         listing.getId(),
                         listing.getId(),
                         listing.getFarmer().getName(),
+                null,
+                null,
+                null,
                         listing.getProductName(),
                         listing.getQuantityKg().doubleValue(),
                         listing.getPricePerKg().doubleValue(),
+                null,
                         listing.getLocation(),
                         "pending"
                 ))
                 .toList();
     }
 
-    @PostMapping("/offers/{listingId}/accept")
-    public AcceptOfferResponse acceptOffer(@RequestHeader("Authorization") String auth, @PathVariable Long listingId) {
+        @PostMapping("/offers/{listingId}/bid")
+        public OfferDto placeBid(
+            @RequestHeader("Authorization") String auth,
+            @PathVariable Long listingId,
+            @Valid @RequestBody BidRequest request
+        ) {
         User user = requireAggregator(auth);
         ProductListing listing = productListingRepository.findById(Objects.requireNonNull(listingId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Listing not found"));
 
         if (listing.getStatus() != ListingStatus.OPEN) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Offer already accepted");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Bidding is closed for this listing");
         }
 
-        Offer offer = new Offer();
+        Offer offer = offerRepository.findByListingAndAggregator(listing, user).orElseGet(Offer::new);
         offer.setListing(listing);
         offer.setAggregator(user);
-        String otp = String.format("%06d", new Random().nextInt(1_000_000));
-        offer.setOtpCode(otp);
-        offer.setStatus(OfferStatus.ACCEPTED);
-        listing.setStatus(ListingStatus.ACCEPTED);
-        productListingRepository.save(listing);
+        offer.setBidPricePerKg(request.bidPrice());
+        offer.setStatus(OfferStatus.BID_PLACED);
+        offer.setOtpCode("000000");
 
         Offer saved = offerRepository.save(offer);
-        return new AcceptOfferResponse(MappingService.toOfferDto(saved), otp);
+        return MappingService.toOfferDto(saved);
     }
 
     @GetMapping("/offers/my")
@@ -98,6 +104,10 @@ public class AggregatorController {
 
         if (!offer.getAggregator().getId().equals(user.getId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot verify this offer");
+        }
+
+        if (offer.getStatus() != OfferStatus.SELECTED) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Farmer has not selected this bid yet");
         }
 
         if (!offer.getOtpCode().equals(request.otp())) {

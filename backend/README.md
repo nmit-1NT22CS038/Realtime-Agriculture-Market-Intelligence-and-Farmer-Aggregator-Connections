@@ -20,6 +20,9 @@ Default values:
 From `backend` folder:
 - `mvn spring-boot:run`
 
+If MySQL is not ready yet, run with local SQL profile (H2 file DB):
+- `mvn spring-boot:run -Dspring-boot.run.profiles=local`
+
 Backend runs at `http://localhost:8080`.
 
 ## 3) ML model integration

@@ -1,89 +1,214 @@
 package com.agrilink.backend.controller;
 
-import com.agrilink.backend.dto.CreateProductRequest;
+import com.agrilink.backend.dto.OfferDto;
 import com.agrilink.backend.dto.PredictionRequest;
-import com.agrilink.backend.dto.PredictionResponse;
-import com.agrilink.backend.dto.ProductDto;
-import com.agrilink.backend.model.PricePrediction;
+import com.agrilink.backend.dto.ProductRequest;
+import com.agrilink.backend.model.ListingStatus;
+import com.agrilink.backend.model.Offer;
+import com.agrilink.backend.model.OfferStatus;
 import com.agrilink.backend.model.ProductListing;
 import com.agrilink.backend.model.User;
 import com.agrilink.backend.model.UserRole;
-import com.agrilink.backend.repository.PricePredictionRepository;
-import com.agrilink.backend.repository.ProductListingRepository;
-import com.agrilink.backend.service.AuthService;
+import com.agrilink.backend.model.UserSession;
+import com.agrilink.backend.repository.OfferRepository;
+import com.agrilink.backend.repository.ProductRepository;
+// import com.agrilink.backend.repository.UserRepository;
+import com.agrilink.backend.repository.UserSessionRepository;
 import com.agrilink.backend.service.MappingService;
+// import com.agrilink.backend.service.AuthService;
 import com.agrilink.backend.service.PredictionService;
-import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
 
+import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/farmer")
+@CrossOrigin(origins = "*")
 public class FarmerController {
 
-    private final AuthService authService;
-    private final ProductListingRepository productListingRepository;
-    private final PredictionService predictionService;
-    private final PricePredictionRepository pricePredictionRepository;
+    @Autowired
+    private ProductRepository productListingRepository;
+    // @Autowired
+    // private AuthService authService;    
+    @Autowired
+    private OfferRepository offerRepository;
 
-    public FarmerController(
-            AuthService authService,
-            ProductListingRepository productListingRepository,
-            PredictionService predictionService,
-            PricePredictionRepository pricePredictionRepository
-    ) {
-        this.authService = authService;
-        this.productListingRepository = productListingRepository;
-        this.predictionService = predictionService;
-        this.pricePredictionRepository = pricePredictionRepository;
+    // @Autowired
+    // private UserRepository userRepository;
+    @Autowired
+    private UserSessionRepository userSessionRepository;    
+    @Autowired
+    private PredictionService predictionService;
+
+    @PostMapping("/listings")
+    public ResponseEntity<?> addProduct(@RequestBody ProductRequest request, @RequestHeader("Authorization") String token) {
+    String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+    
+    // Query UserSession table instead of User table
+    UserSession session = userSessionRepository.findByToken(cleanToken).orElse(null);
+    if (session == null || session.isExpired()) {
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid or expired token"));
+    }
+    
+    User user = session.getUser();
+    if (user.getRole() != UserRole.FARMER) {
+        return ResponseEntity.status(403).body(Map.of("error", "Only farmers can add listings"));
     }
 
-    @GetMapping("/products")
-    public List<ProductDto> myProducts(@RequestHeader("Authorization") String auth) {
-        User user = requireFarmer(auth);
-        return productListingRepository.findByFarmerOrderByCreatedAtDesc(user)
-                .stream()
-                .map(MappingService::toProductDto)
-                .toList();
-    }
+    ProductListing product = new ProductListing();
+    product.setProductName(request.productName());
+    product.setQuantityKg(BigDecimal.valueOf(request.quantityKg()));
+    product.setPricePerKg(BigDecimal.valueOf(request.pricePerKg()));
+    product.setLocation(request.location());
+    product.setFarmer(user);
+    product.setStatus(ListingStatus.OPEN);
 
-    @PostMapping("/products")
-    public ProductDto createProduct(@RequestHeader("Authorization") String auth, @Valid @RequestBody CreateProductRequest request) {
-        User user = requireFarmer(auth);
-        ProductListing listing = new ProductListing();
-        listing.setFarmer(user);
-        listing.setProductName(request.productName());
-        listing.setQuantityKg(request.quantity());
-        listing.setPricePerKg(request.price());
-        listing.setLocation(request.location());
-        return MappingService.toProductDto(productListingRepository.save(listing));
+    ProductListing saved = productListingRepository.save(product);
+    return ResponseEntity.ok(toFarmerProductResponse(saved));
+}
+
+    @GetMapping("/listings")
+    public ResponseEntity<?> getMyProducts(@RequestHeader("Authorization") String token) {
+    String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+    
+    UserSession session = userSessionRepository.findByToken(cleanToken).orElse(null);
+    if (session == null || session.isExpired()) {
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid or expired token"));
+    }
+    
+    User user = session.getUser();
+    List<Map<String, Object>> products = productListingRepository.findByFarmerId(user.getId())
+        .stream()
+        .map(this::toFarmerProductResponse)
+        .toList();
+
+    return ResponseEntity.ok(products);
     }
 
     @PostMapping("/predict")
-    public PredictionResponse predict(@RequestHeader("Authorization") String auth, @Valid @RequestBody PredictionRequest request) {
-        User user = requireFarmer(auth);
-        PredictionResponse response = predictionService.predict(request);
+    public ResponseEntity<?> predictPrice(@RequestBody PredictionRequest request, @RequestHeader("Authorization") String token) {
+        User user = getAuthenticatedFarmer(token);
+        if (user == null) {
+        return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+     }
 
-        PricePrediction prediction = new PricePrediction();
-        prediction.setRequestedBy(user);
-        prediction.setCropName(request.cropName());
-        prediction.setDistrict(request.district());
-        prediction.setPredictedPricePerKg(java.math.BigDecimal.valueOf(response.predictedPricePerKg()));
-        prediction.setConfidence(java.math.BigDecimal.valueOf(response.confidence()));
-        prediction.setModelSource(response.modelSource());
-        pricePredictionRepository.save(prediction);
+        try {
+            PredictionService.PredictionResult result = predictionService.predict(
+                request.district(),
+                request.market(),
+                request.commodity(),
+                request.variety(),
+                request.season(),
+                request.year(),
+                request.month()
+            );
 
-        return response;
-    }
+            Map<String, Object> response = new HashMap<>();
+            response.put("predictedPricePerKg", result.getPrice());
+            response.put("confidence", result.getConfidence());
+            response.put("modelSource", result.getModel());
 
-    private User requireFarmer(String auth) {
-        User user = authService.requireUserFromToken(auth);
-        if (user.getRole() != UserRole.FARMER) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only farmers can access this endpoint");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(Map.of("error", "Prediction failed: " + e.getMessage()));
         }
-        return user;
     }
+
+    @GetMapping("/bids/{listingId}")
+    public ResponseEntity<?> getBidsForListing(@PathVariable Long listingId, @RequestHeader("Authorization") String token) {
+    User user = getAuthenticatedFarmer(token);
+    if (user == null) {
+        return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+    }
+
+    List<OfferDto> bids = offerRepository.findByListingIdAndStatus(listingId, OfferStatus.BID_PLACED)
+            .stream()
+            .map(MappingService::toOfferDto)
+            .toList();
+
+    return ResponseEntity.ok(bids);
+}
+
+    @PostMapping("/bids/{bidId}/accept")
+    public ResponseEntity<?> acceptBid(@PathVariable long bidId, @RequestHeader("Authorization") String token) {
+        User user = getAuthenticatedFarmer(token);
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+
+        Offer offer = offerRepository.findById(bidId).orElse(null);
+        if (offer == null) {
+            return ResponseEntity.status(404).body(Map.of("error", "Bid not found"));
+        }
+
+        offer.setStatus(OfferStatus.SELECTED);
+        String otp = String.format("%06d", (int)(Math.random() * 1000000));
+        offer.setOtpCode(otp);
+        // offer.setOtp(otp);
+        Offer saved = offerRepository.save(offer);
+
+    Map<String, Object> response = new HashMap<>();
+    response.put("offer", MappingService.toOfferDto(saved));
+    response.put("otpForTesting", otp);
+    return ResponseEntity.ok(response);
+
+    }
+
+    @PostMapping("/bids/{bidId}/reject")
+public ResponseEntity<?> rejectBid(@PathVariable long bidId, @RequestHeader("Authorization") String token) {
+    User user = getAuthenticatedFarmer(token);
+    if (user == null) {
+        return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+    }
+
+    Offer offer = offerRepository.findById(bidId).orElse(null);
+    if (offer == null) {
+        return ResponseEntity.status(404).body(Map.of("error", "Bid not found"));
+    }
+
+    if (!offer.getListing().getFarmer().getId().equals(user.getId())) {
+        return ResponseEntity.status(403).body(Map.of("error", "You cannot reject this bid"));
+    }
+
+    offer.setStatus(OfferStatus.REJECTED);
+    offerRepository.save(offer);
+    return ResponseEntity.ok(Map.of("message", "Bid rejected"));
+}
+    private User getAuthenticatedFarmer(String token) {
+    String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
+    UserSession session = userSessionRepository.findByToken(cleanToken).orElse(null);
+
+    if (session == null || session.isExpired()) {
+        return null;
+    }
+
+    User user = session.getUser();
+    if (user.getRole() != UserRole.FARMER) {
+        return null;
+    }
+
+    return user;
+}
+
+private Map<String, Object> toFarmerProductResponse(ProductListing listing) {
+    Map<String, Object> data = new HashMap<>();
+    data.put("id", listing.getId());
+    data.put("farmerName", listing.getFarmer().getName());
+    data.put("farmerId", listing.getFarmer().getId());
+
+    // Keep key name as your frontend currently uses it
+    data.put("Productname", listing.getProductName());
+
+    data.put("quantityKg", listing.getQuantityKg().doubleValue());
+    data.put("pricePerKg", listing.getPricePerKg().doubleValue());
+    data.put("location", listing.getLocation());
+    data.put("status", listing.getStatus().name().toLowerCase());
+    return data;
+}
 }

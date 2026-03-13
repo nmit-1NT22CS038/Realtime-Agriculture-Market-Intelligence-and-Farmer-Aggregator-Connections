@@ -2,6 +2,7 @@ package com.agrilink.backend.controller;
 
 import com.agrilink.backend.dto.AdminStatsResponse;
 import com.agrilink.backend.dto.AnnouncementRequest;
+import com.agrilink.backend.dto.AnnouncementResponse;
 import com.agrilink.backend.model.*;
 import com.agrilink.backend.repository.AnnouncementRepository;
 import com.agrilink.backend.repository.OfferRepository;
@@ -70,9 +71,30 @@ public class AdminController {
 
         return new AdminStatsResponse(totalSales, farmers, aggregators, salesByMonth, salesByProduct);
     }
+    @GetMapping("/announcements")
+public List<AnnouncementResponse> getMyAnnouncements(@RequestHeader("Authorization") String auth) {
+    User user = authService.requireUserFromToken(auth);
 
+    RecipientGroup roleGroup = switch (user.getRole()) {
+        case FARMER -> RecipientGroup.FARMERS;
+        case AGGREGATOR -> RecipientGroup.AGGREGATORS;
+        case ADMIN -> RecipientGroup.ALL;
+    };
+
+    return announcementRepository
+            .findByRecipientGroupInOrderByCreatedAtDesc(List.of(RecipientGroup.ALL, roleGroup))
+            .stream()
+            .map(a -> new AnnouncementResponse(
+                    a.getId(),
+                    a.getMessage(),
+                    a.getRecipientGroup().name().toLowerCase(),
+                    a.getSender().getName(),
+                    a.getCreatedAt()
+            ))
+            .toList();
+}
     @PostMapping("/announcements")
-    public String sendAnnouncement(@RequestHeader("Authorization") String auth, @Valid @RequestBody AnnouncementRequest request) {
+    public Map<String, String> sendAnnouncement(@RequestHeader("Authorization") String auth, @Valid @RequestBody AnnouncementRequest request) {
         User admin = requireAdmin(auth);
 
         Announcement announcement = new Announcement();
@@ -80,7 +102,7 @@ public class AdminController {
         announcement.setMessage(request.message());
         announcement.setRecipientGroup(RecipientGroup.valueOf(request.recipient().toUpperCase(Locale.ROOT)));
         announcementRepository.save(announcement);
-        return "Announcement saved";
+        return Map.of("message", "Announcement saved");
     }
 
     private User requireAdmin(String auth) {

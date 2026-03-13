@@ -2,33 +2,51 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { api, type Announcement, type Offer, type Product } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { LogOut, TrendingUp, MapPin, Package } from "lucide-react";
+import { LogOut, TrendingUp, MapPin, Package, Handshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LocationPicker from "@/components/LocationPicker";
-import { api, type Product } from "@/lib/api";
 
 const FarmerDashboard = () => {
   const { user, logout, token } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [productName, setProductName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
+  const [bidsByListing, setBidsByListing] = useState<Record<number, Offer[]>>(
+    {},
+  );
+
+  // Price prediction fields
+  const [predictionData, setPredictionData] = useState({
+    district: "",
+    market: "",
+    commodity: "",
+    variety: "",
+    season: "Rabi",
+    year: new Date().getFullYear(),
+    month: new Date().getMonth() + 1,
+  });
 
   useEffect(() => {
     if (!token) return;
-    api.getFarmerProducts(token)
-      .then(setProducts)
+
+    Promise.all([api.getMyProducts(token), api.getMyAnnouncements(token)])
+      .then(([productsData, announcementsData]) => {
+        setProducts(productsData);
+        setAnnouncements(announcementsData);
+      })
       .catch(() => {
         toast({
           variant: "destructive",
-          title: "Failed to load products",
+          title: "Failed to load dashboard data",
           description: "Check backend server and login again.",
         });
       });
@@ -36,7 +54,7 @@ const FarmerDashboard = () => {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
   const handleAddProduct = async (e: React.FormEvent) => {
@@ -45,15 +63,15 @@ const FarmerDashboard = () => {
     if (!token) return;
 
     try {
-      const created = await api.addFarmerProduct(token, {
+      const created = await api.addProduct(token, {
         productName,
-        quantity: parseFloat(quantity),
-        price: parseFloat(price),
+        quantityKg: parseFloat(quantity),
+        pricePerKg: parseFloat(price),
         location,
       });
 
       setProducts((prev) => [created, ...prev]);
-      
+
       toast({
         title: "Product added!",
         description: `${productName} has been listed for sale`,
@@ -62,6 +80,7 @@ const FarmerDashboard = () => {
       setProductName("");
       setQuantity("");
       setPrice("");
+      setLocation("");
     } catch {
       toast({
         variant: "destructive",
@@ -74,20 +93,31 @@ const FarmerDashboard = () => {
   const handlePricePredict = async () => {
     if (!token) return;
 
-    if (!productName || !quantity || !location) {
+    if (
+      !predictionData.district ||
+      !predictionData.market ||
+      !predictionData.commodity ||
+      !predictionData.variety ||
+      !predictionData.season
+    ) {
       toast({
         variant: "destructive",
         title: "Missing fields",
-        description: "Fill Product Name, Quantity, and Location first.",
+        description:
+          "Fill all prediction fields (District, Market, Commodity, Variety, Season).",
       });
       return;
     }
 
     try {
       const result = await api.predictPrice(token, {
-        cropName: productName,
-        district: location,
-        quantityKg: parseFloat(quantity),
+        district: predictionData.district,
+        market: predictionData.market,
+        commodity: predictionData.commodity,
+        variety: predictionData.variety,
+        season: predictionData.season,
+        year: predictionData.year,
+        month: predictionData.month,
       });
 
       toast({
@@ -103,13 +133,81 @@ const FarmerDashboard = () => {
     }
   };
 
+  const handleViewBids = async (listingId: number) => {
+    if (!token) return;
+    try {
+      const bids = await api.getBidsForListing(token, listingId);
+      setBidsByListing((prev) => ({ ...prev, [listingId]: bids }));
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to load bids",
+        description: "Please try again.",
+      });
+    }
+  };
+
+  const handleSelectBid = async (listingId: number, offerId: number) => {
+    if (!token) return;
+    try {
+      const response = await api.selectBid(token, listingId, offerId);
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === listingId ? { ...p, status: "accepted" } : p,
+        ),
+      );
+      setBidsByListing((prev) => ({
+        ...prev,
+        [listingId]: (prev[listingId] ?? []).map((b) =>
+          b.id === offerId ? response.offer : b,
+        ),
+      }));
+
+      toast({
+        title: "Bid selected",
+        description: `Aggregator selected. Share OTP ${response.otpForTesting} when handing over produce.`,
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to select bid",
+        description: "Please try again.",
+      });
+    }
+  };
+
+  const handleRejectBid = async (listingId: number, bidId: number) => {
+    if (!token) return;
+    try {
+      await api.rejectBid(token, bidId);
+
+      // Remove rejected bid from current list UI (backend returns only bid_placed anyway)
+      setBidsByListing((prev) => ({
+        ...prev,
+        [listingId]: (prev[listingId] ?? []).filter((b) => b.id !== bidId),
+      }));
+
+      toast({
+        title: "Bid rejected",
+        description: "The bid has been rejected.",
+      });
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "Failed to reject bid",
+        description: "Please try again.",
+      });
+    }
+  };
   return (
     <div className="min-h-screen bg-muted p-4">
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-card rounded-lg p-6 mb-6 flex justify-between items-center shadow">
           <div>
-            <h1 className="text-3xl font-bold text-card-foreground">Farmer Dashboard</h1>
+            <h1 className="text-3xl font-bold text-card-foreground">
+              Farmer Dashboard
+            </h1>
             <p className="text-muted-foreground">Welcome, {user?.name}</p>
           </div>
           <Button variant="outline" onClick={handleLogout}>
@@ -151,7 +249,7 @@ const FarmerDashboard = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price per kg (₹)</Label>
+                  <Label htmlFor="price">Asking Price per kg (₹)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -189,16 +287,127 @@ const FarmerDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground mb-4">
-                  Get AI-powered price predictions for your crops
-                </p>
-                <Button onClick={handlePricePredict} className="w-full">
-                  Predict Prices
-                </Button>
+                <form className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="pred-district">District</Label>
+                    <Input
+                      id="pred-district"
+                      value={predictionData.district}
+                      onChange={(e) =>
+                        setPredictionData({
+                          ...predictionData,
+                          district: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Mysuru"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pred-market">Market</Label>
+                    <Input
+                      id="pred-market"
+                      value={predictionData.market}
+                      onChange={(e) =>
+                        setPredictionData({
+                          ...predictionData,
+                          market: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., APMC Mysuru"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pred-commodity">Commodity</Label>
+                    <Input
+                      id="pred-commodity"
+                      value={predictionData.commodity}
+                      onChange={(e) =>
+                        setPredictionData({
+                          ...predictionData,
+                          commodity: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Rice"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pred-variety">Variety</Label>
+                    <Input
+                      id="pred-variety"
+                      value={predictionData.variety}
+                      onChange={(e) =>
+                        setPredictionData({
+                          ...predictionData,
+                          variety: e.target.value,
+                        })
+                      }
+                      placeholder="e.g., Local"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="pred-season">Season</Label>
+                    <select
+                      id="pred-season"
+                      value={predictionData.season}
+                      onChange={(e) =>
+                        setPredictionData({
+                          ...predictionData,
+                          season: e.target.value,
+                        })
+                      }
+                      className="w-full px-3 py-2 border rounded-md"
+                    >
+                      <option value="Rabi">Rabi</option>
+                      <option value="Kharif">Kharif</option>
+                      <option value="Summer">Summer</option>
+                    </select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="pred-year">Year</Label>
+                      <Input
+                        id="pred-year"
+                        type="number"
+                        value={predictionData.year}
+                        onChange={(e) =>
+                          setPredictionData({
+                            ...predictionData,
+                            year: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pred-month">Month</Label>
+                      <Input
+                        id="pred-month"
+                        type="number"
+                        min="1"
+                        max="12"
+                        value={predictionData.month}
+                        onChange={(e) =>
+                          setPredictionData({
+                            ...predictionData,
+                            month: parseInt(e.target.value),
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <Button type="button" onClick={handlePricePredict} className="w-full">
+                    Predict Price
+                  </Button>
+                </form>
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <MapPin className="mr-2 h-5 w-5" />
@@ -206,15 +415,38 @@ const FarmerDashboard = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <LocationPicker 
-                  address={location} 
+                <LocationPicker
+                  address={location}
                   onLocationSelect={setLocation}
                 />
               </CardContent>
-            </Card>
+            </Card> */}
           </div>
         </div>
-
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>Announcements</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {announcements.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                No announcements yet.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {announcements.map((a) => (
+                  <div key={a.id} className="border rounded-lg p-3 bg-muted/20">
+                    <p className="font-medium">{a.message}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      By {a.senderName} •{" "}
+                      {new Date(a.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
         {/* Listed Products */}
         <Card className="mt-6">
           <CardHeader>
@@ -228,23 +460,87 @@ const FarmerDashboard = () => {
             ) : (
               <div className="space-y-4">
                 {products.map((product) => (
-                  <div key={product.id} className="border rounded-lg p-4 flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-lg">{product.name}</h3>
-                      <p className="text-muted-foreground">
-                        {product.quantity} kg @ ₹{product.price}/kg
-                      </p>
-                      <p className="text-sm text-muted-foreground flex items-center mt-1">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        {product.location}
-                      </p>
+                  <div key={product.id} className="border rounded-lg p-4">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {product.Productname}
+                        </h3>
+                        <p className="text-muted-foreground">
+                          {product.quantityKg} kg @ ₹{product.pricePerKg}/kg
+                        </p>
+                        <p className="text-sm text-muted-foreground flex items-center mt-1">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {product.location}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-primary">
+                          ₹
+                          {(product.quantityKg * product.pricePerKg).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Value
+                        </p>
+                        <p className="text-xs mt-1 capitalize">
+                          Status: {product.status}
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-primary">
-                        ₹{(product.quantity * product.price).toFixed(2)}
-                      </p>
-                      <p className="text-sm text-muted-foreground">Total Value</p>
+
+                    <div className="mt-3">
+                      <Button
+                        variant="outline"
+                        onClick={() => handleViewBids(product.id)}
+                      >
+                        <Handshake className="h-4 w-4 mr-2" />
+                        View Bids
+                      </Button>
                     </div>
+
+                    {(bidsByListing[product.id] ?? []).length > 0 && (
+                      <div className="mt-3 space-y-2">
+                        {(bidsByListing[product.id] ?? []).map((bid) => (
+                          <div
+                            key={bid.id}
+                            className="border rounded p-3 flex justify-between items-center bg-muted/30"
+                          >
+                            <div>
+                              <p className="font-medium">
+                                {bid.aggregatorName ?? "Aggregator"} (
+                                {bid.aggregatorEmail})
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                Quoted: ₹{bid.bidPrice}/kg
+                              </p>
+                              <p className="text-xs capitalize">
+                                {bid.status.replace("_", " ")}
+                              </p>
+                            </div>
+                            {product.status === "open" &&
+                              bid.status === "bid_placed" && (
+                                <div className="flex gap-2">
+                                  <Button
+                                    onClick={() =>
+                                      handleSelectBid(product.id, bid.id)
+                                    }
+                                  >
+                                    Select Bid
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() =>
+                                      handleRejectBid(product.id, bid.id)
+                                    }
+                                  >
+                                    Reject
+                                  </Button>
+                                </div>
+                              )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

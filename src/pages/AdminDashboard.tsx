@@ -74,10 +74,10 @@ const AdminDashboard = () => {
     }
 
     try {
-      await api.sendAnnouncement(token, { recipient, message });
+      const result = await api.sendAnnouncement(token, { recipient, message });
       toast({
         title: "Message sent!",
-        description: `Announcement sent to ${recipient}`,
+        description: result.message,
       });
       setMessage("");
     } catch {

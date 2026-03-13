@@ -12,13 +12,21 @@ export interface AuthResponse {
   user: User;
 }
 
+export interface Announcement {
+  id: number;
+  message: string;
+  recipient: "farmers" | "aggregators" | "all";
+  senderName: string;
+  createdAt: string;
+}
+
 export interface Product {
   id: number;
   farmerName: string;
   farmerId: number;
-  name: string;
-  quantity: number;
-  price: number;
+  Productname: string;
+  quantityKg: number;
+  pricePerKg: number;
   location: string;
   status: "open" | "accepted" | "completed";
 }
@@ -29,15 +37,30 @@ export interface PredictionResponse {
   modelSource: string;
 }
 
-export interface Offer {
+export interface MarketListing {
   id: number;
   listingId: number;
   farmerName: string;
   productName: string;
-  quantity: number;
-  price: number;
+  quantityKg: number;
+  pricePerKg: number;
   location: string;
-  status: "pending" | "accepted" | "completed";
+  status: "pending";
+}
+
+export interface Offer {
+  id: number;
+  listingId: number;
+  farmerName: string;
+  farmerEmail?: string | null;
+  aggregatorName?: string | null;
+  aggregatorEmail?: string | null;
+  productName: string;
+  quantityKg: number;
+  pricePerKg: number;
+  bidPrice?: number | null;
+  location: string;
+  status: "bid_placed" | "selected" | "completed" | "rejected";
 }
 
 export interface AcceptOfferResponse {
@@ -53,7 +76,7 @@ export interface AdminStats {
   salesByProduct: Array<{ product: string; sales: number }>;
 }
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:8080/api";
 
 const jsonHeaders = {
   "Content-Type": "application/json",
@@ -93,34 +116,43 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
-  getFarmerProducts: (token: string) =>
-    request<Product[]>("/farmer/products", {
+  getMyProducts: (token: string) =>
+    request<Product[]>("/farmer/listings", {
       headers: authHeader(token),
     }),
 
-  addFarmerProduct: (token: string, body: { productName: string; quantity: number; price: number; location: string }) =>
-    request<Product>("/farmer/products", {
+  addProduct: (token: string, body: { productName: string; quantityKg: number; pricePerKg: number; location: string }) =>
+    request<Product>("/farmer/listings", {
       method: "POST",
-      headers: { ...jsonHeaders, ...authHeader(token) },
+      headers: { 
+        ...jsonHeaders, 
+        Authorization: `Bearer ${token}`
+      },
       body: JSON.stringify(body),
     }),
 
-  predictPrice: (token: string, body: { cropName: string; district: string; quantityKg: number }) =>
+  predictPrice: (token: string, body: { district: string; market: string; commodity: string; variety: string; season: string; year: number; month: number }) =>
     request<PredictionResponse>("/farmer/predict", {
       method: "POST",
       headers: { ...jsonHeaders, ...authHeader(token) },
       body: JSON.stringify(body),
     }),
-
+  
+  getMyAnnouncements: (token: string) =>
+  request<Announcement[]>("/admin/announcements", {
+    headers: authHeader(token),
+  }), 
+  
   getAvailableOffers: (token: string) =>
-    request<Offer[]>("/aggregator/offers/available", {
+    request<MarketListing[]>("/aggregator/offers/available", {
       headers: authHeader(token),
     }),
 
-  acceptOffer: (token: string, listingId: number) =>
-    request<AcceptOfferResponse>(`/aggregator/offers/${listingId}/accept`, {
+  placeBid: (token: string, listingId: number, bidPrice: number) =>
+    request<Offer>(`/aggregator/offers/${listingId}/bid`, {
       method: "POST",
-      headers: authHeader(token),
+      headers: { ...jsonHeaders, ...authHeader(token) },
+      body: JSON.stringify({ bidPrice }),
     }),
 
   getMyOffers: (token: string) =>
@@ -135,13 +167,30 @@ export const api = {
       body: JSON.stringify({ otp }),
     }),
 
+  getBidsForListing: (token: string, listingId: number) =>
+  request<Offer[]>(`/farmer/bids/${listingId}`, {
+    headers: authHeader(token),
+  }),
+
+  selectBid: (token: string, listingId: number, offerId: number) =>
+  request<AcceptOfferResponse>(`/farmer/bids/${offerId}/accept`, {
+    method: "POST",
+    headers: authHeader(token),
+  }),
+
+  rejectBid: (token: string, bidId: number) =>
+  request<{ message: string }>(`/farmer/bids/${bidId}/reject`, {
+    method: "POST",
+    headers: authHeader(token),
+  }),
+
   getAdminStats: (token: string) =>
     request<AdminStats>("/admin/stats", {
       headers: authHeader(token),
     }),
 
   sendAnnouncement: (token: string, body: { recipient: "farmers" | "aggregators" | "all"; message: string }) =>
-    request<string>("/admin/announcements", {
+    request<{message: string}>("/admin/announcements", {
       method: "POST",
       headers: { ...jsonHeaders, ...authHeader(token) },
       body: JSON.stringify(body),

@@ -7,13 +7,16 @@ C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligen
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AcceptOfferResponse.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AdminStatsResponse.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AnnouncementRequest.java
+C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AnnouncementResponse.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AuthRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\AuthResponse.java
+C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\BidRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\CreateProductRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\OfferDto.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\PredictionRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\PredictionResponse.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\ProductDto.java
+C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\ProductRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\SignupRequest.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\UserDto.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\dto\VerifyOtpRequest.java
@@ -31,6 +34,7 @@ C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligen
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\OfferRepository.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\PricePredictionRepository.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\ProductListingRepository.java
+C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\ProductRepository.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\UserRepository.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\repository\UserSessionRepository.java
 C:\Users\Gagan\Projects\finalyear_project\Realtime-Agriculture-Market-Intelligence-and-Farmer-Aggregator-Connections\backend\src\main\java\com\agrilink\backend\service\AuthService.java

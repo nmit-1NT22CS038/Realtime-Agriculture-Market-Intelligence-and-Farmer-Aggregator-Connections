@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 
 public interface UserSessionRepository extends JpaRepository<UserSession, Long> {
+    
     Optional<UserSession> findByToken(String token);
     void deleteByExpiresAtBefore(LocalDateTime now);
 }

@@ -29,9 +29,13 @@ public class MappingService {
                 offer.getId(),
                 listing.getId(),
                 listing.getFarmer().getName(),
+                listing.getFarmer().getEmail(),
+                offer.getAggregator().getName(),
+                offer.getAggregator().getEmail(),
                 listing.getProductName(),
                 listing.getQuantityKg().doubleValue(),
                 listing.getPricePerKg().doubleValue(),
+                offer.getBidPricePerKg().doubleValue(),
                 listing.getLocation(),
                 offer.getStatus().name().toLowerCase()
         );
