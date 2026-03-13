@@ -29,6 +29,14 @@ const SignUp = () => {
       return;
     }
 
+    if (password.length < 6) {
+    toast({
+    variant: "destructive",
+    title: "Password too short",
+    description: "Password must be at least 6 characters.",
+  });
+  return;
+}
     const success = await signup(name, email, password, role);
     
     if (success) {
