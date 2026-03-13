@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate,Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,9 +36,8 @@ const Login = () => {
 
   // Redirect based on role after login
   if (user) {
-    navigate(`/dashboard/${user.role}`);
-    return null;
-  }
+  return <Navigate to={`/dashboard/${user.role}`} replace />;
+}
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-muted">

@@ -19,13 +19,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedUser = localStorage.getItem('agriflow_user');
     const storedToken = localStorage.getItem('agriflow_token');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
-    if (storedToken) {
-      setToken(storedToken);
-    }
-  }, []);
+
+    try{
+    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedToken) setToken(storedToken);
+  } catch {
+    localStorage.removeItem("agriflow_user");
+    localStorage.removeItem("agriflow_token");
+  }
+}, []);
 
   const signup = async (name: string, email: string, password: string, role: UserRole): Promise<boolean> => {
     try {
