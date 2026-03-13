@@ -28,11 +28,11 @@ const Home = () => {
             Connecting Farmers and Aggregators for a Better Tomorrow
           </p>
           <div className="flex gap-4">
-            // Sign Up button
+        
 <Button asChild size="lg" variant="secondary" className="text-lg px-8">
   <Link to="/signup">Sign Up</Link>
 </Button>
-            // Login button
+           
 <Button
   asChild
   size="lg"
