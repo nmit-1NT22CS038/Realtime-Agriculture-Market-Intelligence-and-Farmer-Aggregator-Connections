@@ -9,6 +9,9 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, TrendingUp, MapPin, Package, Handshake } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import LocationPicker from "@/components/LocationPicker";
+import CropRecommendationForm from "@/components/CropRecommendationForm";
+import RecommendationDisplay from "@/components/RecommendationDisplay";
+import { RecommendationResponse } from "@/lib/api";
 
 const FarmerDashboard = () => {
   const { user, logout, token } = useAuth();
@@ -20,6 +23,7 @@ const FarmerDashboard = () => {
   const [quantity, setQuantity] = useState("");
   const [price, setPrice] = useState("");
   const [location, setLocation] = useState("");
+  const [recommendationResult, setRecommendationResult] = useState<RecommendationResponse | null>(null);
   const [bidsByListing, setBidsByListing] = useState<Record<number, Offer[]>>(
     {},
   );
@@ -422,6 +426,30 @@ const FarmerDashboard = () => {
               </CardContent>
             </Card> */}
           </div>
+
+          {/* Crop Recommendation Section - spans full width */}
+<div className="lg:col-span-2">
+  {!recommendationResult ? (
+    <CropRecommendationForm
+      token={token}
+      onRecommendationReceived={setRecommendationResult}
+    />
+  ) : (
+    <div>
+      <Button
+        variant="outline"
+        onClick={() => setRecommendationResult(null)}
+        className="mb-4"
+      >
+        ← New Recommendation
+      </Button>
+      <RecommendationDisplay
+        recommendation={recommendationResult.recommendations}
+        explanation={recommendationResult.explanation}
+      />
+    </div>
+  )}
+</div>
         </div>
         <Card className="mt-6">
           <CardHeader>

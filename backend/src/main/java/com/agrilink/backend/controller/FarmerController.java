@@ -20,6 +20,11 @@ import com.agrilink.backend.service.PredictionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+//crop recommedation imports
+import com.agrilink.backend.dto.RecommendationRequest;
+import com.agrilink.backend.service.RecommendationService;
+import com.agrilink.backend.service.LlmExplanationService;
+
 
 import java.math.BigDecimal;
 import java.util.HashMap;
@@ -44,7 +49,10 @@ public class FarmerController {
     private UserSessionRepository userSessionRepository;    
     @Autowired
     private PredictionService predictionService;
-
+    @Autowired
+    private RecommendationService recommendationService;
+    @Autowired
+    private LlmExplanationService llmExplanationService;
     @PostMapping("/listings")
     public ResponseEntity<?> addProduct(@RequestBody ProductRequest request, @RequestHeader("Authorization") String token) {
     String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;
@@ -179,6 +187,35 @@ public ResponseEntity<?> rejectBid(@PathVariable long bidId, @RequestHeader("Aut
     offer.setStatus(OfferStatus.REJECTED);
     offerRepository.save(offer);
     return ResponseEntity.ok(Map.of("message", "Bid rejected"));
+}
+    @PostMapping("/recommend")
+public ResponseEntity<?> recommendCrops(
+        @RequestBody RecommendationRequest request,
+        @RequestHeader("Authorization") String token
+) {
+    User user = getAuthenticatedFarmer(token);
+    if (user == null) {
+        return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+    }
+
+    try {
+        Map<String, Object> recommendations = recommendationService.recommend(
+                request.district(),
+                request.season(),
+                request.commodity(),
+                request.landSize(),
+                null
+        );
+
+        String explanation = llmExplanationService.generateExplanation(recommendations);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("recommendations", recommendations);
+        response.put("explanation", explanation);
+        return ResponseEntity.ok(response);
+    } catch (Exception e) {
+        return ResponseEntity.status(500).body(Map.of("error", "Recommendation failed: " + e.getMessage()));
+    }
 }
     private User getAuthenticatedFarmer(String token) {
     String cleanToken = token.startsWith("Bearer ") ? token.substring(7) : token;

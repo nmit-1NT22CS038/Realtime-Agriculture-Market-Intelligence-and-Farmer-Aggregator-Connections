@@ -1,4 +1,5 @@
 package com.agrilink.backend.service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.agrilink.backend.dto.AuthRequest;
 import com.agrilink.backend.dto.AuthResponse;
@@ -61,6 +62,7 @@ public class AuthService {
         return createSession(user);
     }
 
+    @Transactional
     public User requireUserFromToken(String authHeader) {
         String token = extractBearerToken(authHeader);
         userSessionRepository.deleteByExpiresAtBefore(LocalDateTime.now());
@@ -78,6 +80,7 @@ public class AuthService {
     public static UserDto toUserDto(User user) {
         return new UserDto(user.getId(), user.getName(), user.getEmail(), user.getRole().name().toLowerCase(Locale.ROOT));
     }
+    
 
     private AuthResponse createSession(User user) {
         UserSession session = new UserSession();

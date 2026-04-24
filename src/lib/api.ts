@@ -101,6 +101,40 @@ function authHeader(token: string) {
   return { Authorization: `Bearer ${token}` };
 }
 
+
+export interface CropRecommendation {
+  district: string;
+  rainfall_mm: number;
+  rainfall_type: string;
+  season: string;
+  main_crop: string;
+  recommended_crops: string[];
+  land_plan: Record<string, string>;
+}
+
+export interface RecommendationResponse {
+  recommendations: CropRecommendation;
+  explanation: string;
+}
+
+export async function getRecommendations(token: string, data: {
+  district: string;
+  season: "Rabi" | "Kharif";
+  commodity: string;
+  landSize: number;
+  year?: number;
+}): Promise<RecommendationResponse> {
+  return request("/farmer/recommend", {
+    method: "POST",
+    headers: {
+      ...jsonHeaders,
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+}
+
+
 export const api = {
   signup: (body: { name: string; email: string; password: string; role: UserRole }) =>
     request<AuthResponse>("/auth/signup", {
