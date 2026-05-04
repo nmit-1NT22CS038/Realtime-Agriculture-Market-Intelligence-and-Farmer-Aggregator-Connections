@@ -126,7 +126,7 @@ const FarmerDashboard = () => {
 
       toast({
         title: "Price Prediction",
-        description: `Predicted ₹${result.predictedPricePerKg.toFixed(2)}/kg (confidence ${result.confidence.toFixed(1)}%, ${result.modelSource})`,
+        description: `Predicted ₹${result.predictedPricePerKg.toFixed(2)}/100 kg (confidence ${result.confidence.toFixed(1)}%, ${result.modelSource})`,
       });
     } catch {
       toast({
