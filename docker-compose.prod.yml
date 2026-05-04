@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: agrilink-mysql-prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: agrilink_db
+      MYSQL_USER: agrilink_user
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 20s
+      retries: 10
+    restart: unless-stopped
+    networks:
+      - agrilink-network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: agrilink-backend-prod
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/agrilink_db
+      SPRING_DATASOURCE_USERNAME: agrilink_user
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      APP_ML_PYTHON_PATH: python3
+      APP_ML_RECOMMEND_SCRIPT_PATH: /app/ml/recommend.py
+      APP_ML_RAINFALL_CSV_PATH: /app/Data/rainfall_master_normalized.csv
+      APP_LLM_ENABLED: ${APP_LLM_ENABLED}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - agrilink-network
+    expose:
+      - "8080"
+
+  nginx:
+    image: nginx:alpine
+    container_name: agrilink-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - agrilink-network
+
+volumes:
+  mysql_data:
+
+networks:
+  agrilink-network:
+    driver: bridge
