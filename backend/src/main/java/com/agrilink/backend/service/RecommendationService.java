@@ -13,7 +13,7 @@ import java.util.Map;
 @Service
 public class RecommendationService {
 
-    @Value("${app.ml.python-command:python}")
+    @Value("${app.ml.python-command:python3}")
     private String pythonPath;
 
     @Value("${app.ml.recommend-script-path:ml/recommend.py}")
