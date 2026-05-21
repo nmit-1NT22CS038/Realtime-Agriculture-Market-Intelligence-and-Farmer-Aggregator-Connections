@@ -62,6 +62,20 @@ services:
     restart: unless-stopped
     networks:
       - agrilink-network
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+      args:
+        VITE_API_BASE_URL: https://agrillink.sbs/api
+    container_name: agrilink-frontend-prod
+    environment:
+      VITE_API_BASE_URL: https://agrillink.sbs/api
+    restart: unless-stopped
+    networks:
+      - agrilink-network
+    expose:
+      - "3000"
 
 volumes:
   mysql_data:
