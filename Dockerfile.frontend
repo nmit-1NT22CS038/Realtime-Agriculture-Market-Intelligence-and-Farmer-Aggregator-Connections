@@ -6,7 +6,7 @@ COPY package.json package-lock.json ./
 RUN npm ci
 
 COPY . .
-RUN RUN VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8082/api} npm run build
+RUN VITE_API_BASE_URL=${VITE_API_BASE_URL:-http://localhost:8082/api} npm run build
 
 
 # Runtime stage
