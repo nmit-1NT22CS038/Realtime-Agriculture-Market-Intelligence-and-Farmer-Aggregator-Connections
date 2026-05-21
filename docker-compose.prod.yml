@@ -47,6 +47,8 @@ services:
       - agrilink-network
     expose:
       - "8080"
+    volumes:
+      - ../Data:/app/Data:ro
 
   nginx:
     image: nginx:alpine
