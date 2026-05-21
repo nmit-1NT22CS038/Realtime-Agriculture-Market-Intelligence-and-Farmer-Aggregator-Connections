@@ -29,16 +29,23 @@ services:
     container_name: agrilink-backend-prod
     ports:
       - "8080:8080" 
+    env_file: .env
     environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/agrilink_db
-      SPRING_DATASOURCE_USERNAME: agrilink_user
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      APP_ML_PYTHON_PATH: python3
-      APP_ML_RECOMMEND_SCRIPT_PATH: /app/ml/recommend.py
-      APP_ML_RAINFALL_CSV_PATH: /app/Data/rainfall_master_normalized.csv
-      APP_LLM_ENABLED: ${APP_LLM_ENABLED}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
+    SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/agrilink_db
+    SPRING_DATASOURCE_USERNAME: agrilink_user
+    SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+    SPRING_JPA_HIBERNATE_DDL_AUTO: update
+    APP_ML_PYTHON_PATH: python3
+    APP_ML_PYTHON_COMMAND: python3
+    APP_ML_RECOMMEND_SCRIPT_PATH: /app/ml/recommend.py
+    APP_ML_SCRIPT_PATH: /app/ml/predict.py
+    APP_ML_RAINFALL_CSV_PATH: /app//ml/data/rainfall_master_normalized.csv
+    APP_ML_MODEL_PATH: /app/ml/price_rf_model.pkl
+    APP_ML_ENCODERS_PATH: /app/ml/price_label_encoders.pkl
+    APP_ML_FEATURES_PATH: /app/ml/price_feature_columns.pkl
+    APP_ML_HISTORY_PATH: /app/ml/secondprice_label_encoders.pkl
+    APP_LLM_ENABLED: ${APP_LLM_ENABLED}
+    OPENAI_API_KEY: ${OPENAI_API_KEY}
     depends_on:
       mysql:
         condition: service_healthy
