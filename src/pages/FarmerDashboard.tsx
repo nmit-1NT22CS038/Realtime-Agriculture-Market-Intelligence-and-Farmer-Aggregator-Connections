@@ -12,6 +12,7 @@ import LocationPicker from "@/components/LocationPicker";
 import CropRecommendationForm from "@/components/CropRecommendationForm";
 import RecommendationDisplay from "@/components/RecommendationDisplay";
 import { RecommendationResponse } from "@/lib/api";
+import PricePredictionForm from "@/components/PricePredictionForm";
 
 const FarmerDashboard = () => {
   const { user, logout, token } = useAuth();
@@ -28,16 +29,16 @@ const FarmerDashboard = () => {
     {},
   );
 
-  // Price prediction fields
-  const [predictionData, setPredictionData] = useState({
-    district: "",
-    market: "",
-    commodity: "",
-    variety: "",
-    season: "Rabi",
-    year: new Date().getFullYear(),
-    month: new Date().getMonth() + 1,
-  });
+  // // Price prediction fields
+  // const [predictionData, setPredictionData] = useState({
+  //   district: "",
+  //   market: "",
+  //   commodity: "",
+  //   variety: "",
+  //   season: "Rabi",
+  //   year: new Date().getFullYear(),
+  //   month: new Date().getMonth() + 1,
+  // });
 
   useEffect(() => {
     if (!token) return;
@@ -90,49 +91,6 @@ const FarmerDashboard = () => {
         variant: "destructive",
         title: "Failed to add product",
         description: "Please try again.",
-      });
-    }
-  };
-
-  const handlePricePredict = async () => {
-    if (!token) return;
-
-    if (
-      !predictionData.district ||
-      !predictionData.market ||
-      !predictionData.commodity ||
-      !predictionData.variety ||
-      !predictionData.season
-    ) {
-      toast({
-        variant: "destructive",
-        title: "Missing fields",
-        description:
-          "Fill all prediction fields (District, Market, Commodity, Variety, Season).",
-      });
-      return;
-    }
-
-    try {
-      const result = await api.predictPrice(token, {
-        district: predictionData.district,
-        market: predictionData.market,
-        commodity: predictionData.commodity,
-        variety: predictionData.variety,
-        season: predictionData.season,
-        year: predictionData.year,
-        month: predictionData.month,
-      });
-
-      toast({
-        title: "Price Prediction",
-        description: `Predicted ₹${result.predictedPricePerKg.toFixed(2)}/100 kg (confidence ${result.confidence.toFixed(1)}%, ${result.modelSource})`,
-      });
-    } catch {
-      toast({
-        variant: "destructive",
-        title: "Prediction failed",
-        description: "Check backend and ML script configuration.",
       });
     }
   };
@@ -281,135 +239,9 @@ const FarmerDashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+            {/* Quick Actions */}
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="mr-2 h-5 w-5" />
-                  Price Prediction
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form className="space-y-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="pred-district">District</Label>
-                    <Input
-                      id="pred-district"
-                      value={predictionData.district}
-                      onChange={(e) =>
-                        setPredictionData({
-                          ...predictionData,
-                          district: e.target.value,
-                        })
-                      }
-                      placeholder="e.g., Mysuru"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pred-market">Market</Label>
-                    <Input
-                      id="pred-market"
-                      value={predictionData.market}
-                      onChange={(e) =>
-                        setPredictionData({
-                          ...predictionData,
-                          market: e.target.value,
-                        })
-                      }
-                      placeholder="e.g., APMC Mysuru"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pred-commodity">Commodity</Label>
-                    <Input
-                      id="pred-commodity"
-                      value={predictionData.commodity}
-                      onChange={(e) =>
-                        setPredictionData({
-                          ...predictionData,
-                          commodity: e.target.value,
-                        })
-                      }
-                      placeholder="e.g., Rice"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pred-variety">Variety</Label>
-                    <Input
-                      id="pred-variety"
-                      value={predictionData.variety}
-                      onChange={(e) =>
-                        setPredictionData({
-                          ...predictionData,
-                          variety: e.target.value,
-                        })
-                      }
-                      placeholder="e.g., Local"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="pred-season">Season</Label>
-                    <select
-                      id="pred-season"
-                      value={predictionData.season}
-                      onChange={(e) =>
-                        setPredictionData({
-                          ...predictionData,
-                          season: e.target.value,
-                        })
-                      }
-                      className="w-full px-3 py-2 border rounded-md"
-                    >
-                      <option value="Rabi">Rabi</option>
-                      <option value="Kharif">Kharif</option>
-                      <option value="Summer">Summer</option>
-                    </select>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="pred-year">Year</Label>
-                      <Input
-                        id="pred-year"
-                        type="number"
-                        value={predictionData.year}
-                        onChange={(e) =>
-                          setPredictionData({
-                            ...predictionData,
-                            year: parseInt(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="pred-month">Month</Label>
-                      <Input
-                        id="pred-month"
-                        type="number"
-                        min="1"
-                        max="12"
-                        value={predictionData.month}
-                        onChange={(e) =>
-                          setPredictionData({
-                            ...predictionData,
-                            month: parseInt(e.target.value),
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <Button type="button" onClick={handlePricePredict} className="w-full">
-                    Predict Price
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
+            <PricePredictionForm token={token} />
 
             {/* <Card>
               <CardHeader>
