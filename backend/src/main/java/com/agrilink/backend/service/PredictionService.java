@@ -23,7 +23,7 @@ public class PredictionService {
     @Value("${app.ml.history-path:}")
     private String historyPath;
 
-    @Value("${app.ml.python-command:python}")
+    @Value("${app.ml.python-command:python3}")
     private String pythonPath;
 
     @Value("${app.ml.script-path:ml/predict.py}")
