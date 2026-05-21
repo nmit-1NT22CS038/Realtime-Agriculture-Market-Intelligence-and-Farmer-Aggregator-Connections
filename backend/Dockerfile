@@ -14,7 +14,7 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 
 # Copy ML modules
 COPY backend/ml ./ml
-COPY .. /Data 
+COPY Data /app/Data
 
 # Copy built JAR
 COPY --from=build /app/target/*.jar app.jar
