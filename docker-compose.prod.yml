@@ -43,7 +43,7 @@ services:
       APP_ML_MODEL_PATH: /app/ml/price_rf_model.pkl
       APP_ML_ENCODERS_PATH: /app/ml/price_label_encoders.pkl
       APP_ML_FEATURES_PATH: /app/ml/price_feature_columns.pkl
-      APP_ML_HISTORY_PATH: /app/ml/secondprice_label_encoders.pkl
+      APP_ML_HISTORY_PATH: /app/ml/data/historical_reference_data.csv
       APP_LLM_ENABLED: ${APP_LLM_ENABLED}
       OPENAI_API_KEY: ${OPENAI_API_KEY}
     depends_on:
