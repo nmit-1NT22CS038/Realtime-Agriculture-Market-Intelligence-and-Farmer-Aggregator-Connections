@@ -64,7 +64,7 @@ export default function PricePredictionForm({ token }: PricePredictionFormProps)
 
       toast({
         title: "Price Prediction",
-        description: `₹${result.predictedPricePerKg.toFixed(2)}/kg (${result.confidence.toFixed(1)}% confidence, ${result.modelSource})`,
+        description: `₹${result.predictedPricePerKg.toFixed(2)}/100 kg(Quintal) (${result.confidence.toFixed(1)}% confidence, ${result.modelSource})`,
       });
     } catch (error) {
       toast({
